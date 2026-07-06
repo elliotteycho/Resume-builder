@@ -23,8 +23,15 @@ export async function POST(req: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      let closed = false;
       const send = (event: ProgressEvent) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        } catch {
+          // client disconnected mid-stream; keep the pipeline from crashing
+          closed = true;
+        }
       };
 
       try {
@@ -53,7 +60,14 @@ export async function POST(req: NextRequest) {
         const message = err instanceof Error ? err.message : "Generation failed";
         send({ type: "error", message });
       } finally {
-        controller.close();
+        if (!closed) {
+          closed = true;
+          try {
+            controller.close();
+          } catch {
+            // already closed by the runtime on disconnect
+          }
+        }
       }
     },
   });

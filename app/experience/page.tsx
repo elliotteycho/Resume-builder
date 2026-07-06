@@ -3,10 +3,6 @@
 import { useEffect, useState } from "react";
 import type { ExperienceBank } from "@/lib/types";
 
-type Work = ExperienceBank["work"][number];
-type Project = ExperienceBank["projects"][number];
-type Education = ExperienceBank["education"][number];
-
 const newId = () => Math.random().toString(36).slice(2, 10);
 
 export default function ExperiencePage() {
@@ -37,6 +33,7 @@ export default function ExperiencePage() {
         throw new Error(data.error || "Save failed");
       }
       setSavedAt(Date.now());
+      setTimeout(() => setSavedAt(null), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
     } finally {
