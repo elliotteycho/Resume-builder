@@ -1,0 +1,119 @@
+{
+  "profile": {
+    "name": "Alex Rivera",
+    "email": "alex.rivera@example.com",
+    "phone": "(555) 010-2345",
+    "location": "Nashville, TN",
+    "links": ["linkedin.com/in/alexrivera", "github.com/alexrivera"],
+    "summary": "Early-career software engineer with a data/analytics bent. Interested in backend systems, fintech, and healthtech. Open to relocation."
+  },
+  "work": [
+    {
+      "id": "w1",
+      "title": "Software Engineering Intern",
+      "organization": "Acme Health Systems",
+      "location": "Nashville, TN",
+      "start": "May 2025",
+      "end": "Aug 2025",
+      "bullets": [
+        "Built a patient-intake data pipeline in Python and PostgreSQL that reduced manual chart-prep time by 40% across 3 clinics",
+        "Wrote integration tests raising service coverage from 55% to 85%, catching 12 regressions before release",
+        "Presented pipeline redesign to a 10-person engineering org; proposal adopted for the next quarter's roadmap"
+      ],
+      "skills": ["Python", "PostgreSQL", "pytest", "ETL", "HIPAA awareness"],
+      "evidence": [
+        {
+          "metric": "40%",
+          "claim": "reduction in manual chart-prep time from the intake pipeline",
+          "provenance": "clinic ops time-tracking comparison, Aug 2025",
+          "confidence": "high"
+        },
+        {
+          "metric": "3 clinics",
+          "claim": "clinics the pipeline was deployed across",
+          "provenance": "deployment checklist",
+          "confidence": "high"
+        },
+        {
+          "metric": "55% to 85%",
+          "claim": "integration test coverage increase",
+          "provenance": "CI coverage report before/after",
+          "confidence": "high"
+        },
+        {
+          "metric": "12 regressions",
+          "claim": "regressions caught by the new tests before release",
+          "provenance": "release QA log",
+          "confidence": "medium"
+        },
+        {
+          "metric": "10-person",
+          "claim": "size of the engineering org presented to",
+          "provenance": "rough headcount from memory",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "id": "w2",
+      "title": "Teaching Assistant, Data Structures",
+      "organization": "Vanderbilt University",
+      "location": "Nashville, TN",
+      "start": "Aug 2024",
+      "end": "May 2025",
+      "bullets": [
+        "Led weekly recitations for 60+ students; office-hour attendance doubled after introducing worked-example sessions",
+        "Graded and gave feedback on 400+ C++ assignments per semester"
+      ],
+      "skills": ["C++", "Teaching", "Communication"],
+      "evidence": [
+        {
+          "metric": "60+ students",
+          "claim": "weekly recitation attendance",
+          "provenance": "course enrollment roster",
+          "confidence": "high"
+        },
+        {
+          "metric": "400+",
+          "claim": "C++ assignments graded per semester",
+          "provenance": "gradebook export",
+          "confidence": "medium"
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "p1",
+      "name": "SplitStream",
+      "description": "Real-time expense-splitting web app used by 200+ students",
+      "bullets": [
+        "Designed REST API (Node.js/Express) and React front end; deployed on AWS with CI/CD via GitHub Actions",
+        "Implemented optimistic-concurrency handling that eliminated double-settlement bugs"
+      ],
+      "skills": ["Node.js", "React", "AWS", "CI/CD"],
+      "link": "github.com/alexrivera/splitstream",
+      "evidence": [
+        {
+          "metric": "200+",
+          "claim": "active student users",
+          "provenance": "analytics dashboard, spring 2026",
+          "confidence": "medium"
+        }
+      ]
+    }
+  ],
+  "education": [
+    {
+      "id": "e1",
+      "institution": "Vanderbilt University",
+      "degree": "B.S. Computer Science",
+      "field": "Minor in Economics",
+      "graduation": "May 2026",
+      "details": ["GPA 3.8/4.0", "Dean's List (4 semesters)", "Coursework: Distributed Systems, Machine Learning, Databases"]
+    }
+  ],
+  "skills": ["Python", "TypeScript", "C++", "SQL", "React", "Node.js", "AWS", "Docker", "Git"],
+  "certifications": ["AWS Certified Cloud Practitioner (2025)"],
+  "awards": ["2nd place, VandyHacks 2024 (team of 4, health-data track)"]
+}
