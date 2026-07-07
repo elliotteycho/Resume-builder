@@ -16,8 +16,13 @@ export const SYNTHESIS_RULES = `THE OPERATING MODEL — embodiment, not selectio
 - Each bullet carries the one or two themes listed in its \`themes\` field — never all of them. Cramming every theme into every bullet reads as performative. The resume as a whole covers the themes; individual bullets pick their spots.
 
 BULLET CRAFT (follow the per-entry directives from the reframing map):
+- TWO BULLET SHAPES exist. The evidence retrieved decides which one fires — never which reads punchier:
+  * Outcome-anchored: use ONLY when a high/medium-confidence OUTCOME metric exists in the entry's evidence. Verb, then the scope or method owned, then the retrieved outcome copied verbatim.
+  * Scope-anchored: use when the only defensible numbers are scale or activity counts. There is NO outcome slot to fill — the scale and the named mechanism carry the weight. Never staple a percentage onto the end to make an "impact" slot fire; a template that demands an outcome the work never measured is where fabrication is born. A concrete scope bullet beats an invented outcome bullet every time.
 - Lead each bullet with a verb from the entry's assigned verb register. Frame around the strategic question or the listening act, not just the deliverable: "Diagnosed the growth bottleneck by auditing 198 accounts" beats "Owned production audit of 198 accounts".
-- Write in Action, Responsibility, Impact order. Anchor with the entry's anchor metric or another verified number from the bank.
+- Front-load the strongest true element. If the scale is the impressive part ($1.8M project, 2,740 signups), it goes near the front — not buried at the end where nobody reads.
+- Kill causal connective tissue you cannot defend. "Resulting in", "driving", and "which increased" assert that the action caused the outcome — attribution claims an interviewer can challenge. Use them only when the evidence supports the causal chain; otherwise state what was done and what the number was, adjacent, with no fabricated causal weld.
+- Cover test every bullet: mentally cover the verb and the metric — if what remains could appear on any candidate's resume for this role, the bullet has no signal; rewrite it around the concrete mechanism.
 - Mix registers across the resume so it is not all one voice; keep doer verbs where the posting genuinely wants execution.
 - Aim for 150-200 characters per bullet — substantial but tight; never exceed 210.
 
