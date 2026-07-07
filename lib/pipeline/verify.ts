@@ -11,6 +11,7 @@ import {
 
 const FORBIDDEN_CHARS = /[—–“”‘’]/; // em dash, en dash, smart quotes
 const MAX_BULLET_CHARS = 210;
+const MIN_BULLET_CHARS = 150; // shorter bullets end mid-line and waste keyword space
 const LIFT_SHINGLE_WORDS = 5;
 
 type LocatedBullet = { location: string; text: string };
@@ -140,15 +141,15 @@ export function runChecks(
     });
   }
 
-  // 5. Bullet length ceiling (warn only)
-  const longHits = bullets
-    .filter((b) => b.text.length > MAX_BULLET_CHARS)
-    .map((b) => `${b.location}: ${b.text.length} chars`);
+  // 5. Bullet length window (warn only) — fill the line, don't overflow it
+  const lengthHits = bullets
+    .filter((b) => b.text.length > MAX_BULLET_CHARS || b.text.length < MIN_BULLET_CHARS)
+    .map((b) => `${b.location}: ${b.text.length} chars (${b.text.length > MAX_BULLET_CHARS ? "overflows a third line" : "ends mid-line; add keywords/metrics"})`);
   checks.push({
-    name: `Bullets within ${MAX_BULLET_CHARS} characters`,
-    passed: longHits.length === 0,
+    name: `Bullets fill the line (${MIN_BULLET_CHARS}-${MAX_BULLET_CHARS} characters)`,
+    passed: lengthHits.length === 0,
     severity: "warn",
-    details: longHits,
+    details: lengthHits,
   });
 
   // 6. Metric coverage (informational warn)
