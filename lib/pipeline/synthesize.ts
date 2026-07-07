@@ -24,6 +24,7 @@ BULLET CRAFT (follow the per-entry directives from the reframing map):
 - Kill causal connective tissue you cannot defend. "Resulting in", "driving", and "which increased" assert that the action caused the outcome — attribution claims an interviewer can challenge. Use them only when the evidence supports the causal chain; otherwise state what was done and what the number was, adjacent, with no fabricated causal weld.
 - Cover test every bullet: mentally cover the verb and the metric — if what remains could appear on any candidate's resume for this role, the bullet has no signal; rewrite it around the concrete mechanism.
 - Mix registers across the resume so it is not all one voice; keep doer verbs where the posting genuinely wants execution.
+- Tense follows the entry's dates: roles ending in "Present" lead with present-tense verbs (Engineer, Build, Coordinate); completed roles lead with past tense. Inner clauses describing already-achieved results may stay past ("that secured board approval").
 - Aim for 150-200 characters per bullet — substantial but tight; never exceed 210.
 
 HARD RULES (violations will be rejected by an automated verifier):
