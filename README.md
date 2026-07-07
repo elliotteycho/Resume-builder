@@ -1,14 +1,23 @@
 # Resume Builder
 
-A job-description-driven resume builder. Paste a posting and it:
+A job-description-driven resume builder built on an **embodiment** philosophy: the job description is the gravitational center. The resume isn't scored against it — it's rewritten around it, so the result reads like it was written by someone already inside the company.
 
-1. **Analyzes the posting** — identifies the company, role, seniority, industry, market segment, hard/soft skills, and the exact ATS keywords recruiters screen for (structured output, validated against a schema).
-2. **Researches in parallel** — three simultaneous web-search agents gather *current* data:
-   - **Company intel** — recent news, funding, products, culture signals
+Paste a posting and the pipeline runs five stages:
+
+1. **Analyze** — reads the posting twice (what they wrote, then what they need). Extracts the company, role, seniority, industry, and — crucially — 4–7 **concept-level themes** beneath the bullet list ("deciding what matters when everything competes for attention" is a theme; "Jira" is a keyword). Also: success factors, non-negotiable vs decorative requirements, and exact ATS keywords.
+2. **Research (3 parallel agents)** — simultaneous web-search agents gather *current* data:
+   - **Company intel** — news, funding, products, culture, and a **voice scan** (tone, altitude, recurring vocabulary)
    - **Role & market** — what the role demands right now, in-demand skills, trends
-   - **Resume conventions** — how resumes are expected to look for *this* role in *this* industry (section order, naming, bullet style, length norms — finance ≠ nursing ≠ software)
-3. **Reads your experience bank** — a personal, editable store of your full career history (work, projects, education, skills, certifications, awards).
-4. **Synthesizes a tailored resume** — selects and rewrites the most relevant material, follows the industry's conventions, weaves in ATS keywords, and honestly reports any gaps it couldn't cover. It never fabricates anything not in your bank.
+   - **Resume conventions** — how resumes are expected to look for *this* role in *this* industry (finance ≠ nursing ≠ software)
+3. **Reframe synthesis** — fuses the posting and the research into a build brief: a company **belief vector** (3–5 statements), a ranked **demand vector** (required / qualification / preference), voice notes, and **per-entry directives** — which experiences carry which themes, what verb register to lead with (diagnostic, listening, weighing, clarity, imagination, building, doer), the framing angle, and the anchor metric.
+4. **Synthesize** — writes the resume from the directives. Bullets follow Action–Responsibility–Impact order, each carries one or two themes (never all), verbs embody the themes ("Diagnosed the growth bottleneck by auditing 198 accounts" beats "Owned production audit of 198 accounts"), and the company's voice is absorbed — never pasted.
+5. **Verify** — deterministic code checks (not model judgment) enforce the hard rules; violations trigger one automatic revision pass, and the final report is shown:
+   - No two bullets start with the same first verb
+   - No em/en dashes or smart quotes anywhere
+   - No 5+ consecutive words lifted verbatim from the posting
+   - Bullet length ceiling and metric-density warnings
+
+**Never fabricates.** Every claim must trace to your experience bank; requirements the bank can't support are reported honestly as gaps.
 
 Built with Next.js + TypeScript and the [Anthropic API](https://platform.claude.com/) (Claude Opus 4.8, web search server tool, structured outputs, adaptive thinking).
 
@@ -24,27 +33,31 @@ Open http://localhost:3000.
 
 ## Usage
 
-1. Go to **Experience Bank** and replace the sample data with your own history. Be generous — include metrics, tools, and outcomes. More raw material means better tailoring. Saved to `data/experience-bank.json` (git-ignored; it's personal data).
-2. Go to **Generate**, paste a full job description, and click **Generate tailored resume**. You'll see live progress as the analysis completes and the three research agents run.
-3. Review the result: the rendered resume, the tailoring strategy, ATS keywords used, honest gaps, and the raw research findings.
-4. Export via **Print / Save as PDF** (print stylesheet included) or **Download Markdown**.
+1. Go to **Experience Bank** and replace the sample data with your own history. Be generous — include metrics, tools, and outcomes; every number in a tailored bullet must trace back here. Saved to `data/experience-bank.json` (git-ignored; it's personal data).
+2. Go to **Generate**, paste a full job description, optionally add guidance ("lead with the data projects", "skip the retail job"), and generate. You'll watch live progress through all five stages.
+3. Review the result: the rendered resume, the verification report, the tailoring strategy, the reframing map (beliefs, demands, entry directives, bullet-by-bullet theme map), ATS keywords used, honest gaps, and the raw research.
+4. Export as **.docx** (ATS-clean: Times New Roman, 0.5" margins, bordered ALL-CAPS section headers, right-aligned dates), **PDF** (via print stylesheet), or **Markdown**.
 
 ## Architecture
 
 ```
 app/
-  page.tsx                 # Generate flow (SSE progress UI + resume preview)
-  experience/page.tsx      # Experience bank editor
-  api/generate/route.ts    # SSE pipeline: analyze → parallel research → synthesize
-  api/experience/route.ts  # Experience bank load/save
+  page.tsx                    # Generate flow (SSE progress UI, tailoring table, exports)
+  experience/page.tsx         # Experience bank editor
+  api/generate/route.ts       # SSE pipeline: analyze → research ×3 → reframe → synthesize → verify
+  api/experience/route.ts     # Experience bank load/save
+  api/export/docx/route.ts    # ATS-clean .docx export
 lib/
-  types.ts                 # Zod schemas: job analysis, experience bank, resume
-  anthropic.ts             # Anthropic client (Claude Opus 4.8)
-  pipeline/analyze.ts      # Structured job-description analysis (messages.parse)
-  pipeline/research.ts     # 3 parallel web_search agents (handles pause_turn)
-  pipeline/synthesize.ts   # Resume synthesis (structured output, high effort)
-  experienceStore.ts       # JSON file store for the experience bank
-components/ResumeView.tsx  # Resume renderer + markdown export
+  types.ts                    # Zod schemas: analysis (themes), reframe map, bank, resume, verification
+  anthropic.ts                # Anthropic client (Claude Opus 4.8)
+  pipeline/analyze.ts         # Two-read JD analysis with theme extraction
+  pipeline/research.ts        # 3 parallel web_search agents incl. company voice scan
+  pipeline/reframe.ts         # Belief vector + demand vector + per-entry directives
+  pipeline/synthesize.ts      # Embodiment writing rules + hard constraints
+  pipeline/verify.ts          # Deterministic rule checks + one auto-revision pass
+  docx.ts                     # Yale-style .docx template (docx package)
+  experienceStore.ts          # JSON file store for the experience bank
+components/ResumeView.tsx     # Resume renderer + markdown export
 data/experience-bank.sample.json  # Seed data used until you save your own
 ```
 

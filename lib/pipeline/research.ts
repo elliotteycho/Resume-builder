@@ -45,13 +45,14 @@ async function requestOnce(
 }
 
 const COMPANY_SYSTEM = `You are a company-intelligence researcher supporting a job applicant.
-Search the web for current, factual information. Return concise markdown with these sections:
-## Company snapshot (what they do, size, stage, business model)
+Search the web for current, factual information — the company's homepage, About page, product pages, careers page, recent launches, founder posts, press. Return concise markdown with these sections:
+## Company snapshot (what they do, size, stage, business model, their own one-liner)
 ## Recent developments (news, funding, launches, leadership changes from the last ~12 months)
 ## Products & customers
+## Company voice (how they talk about themselves: tone — formal vs casual, builder vs operator, technical vs strategic; altitude — vision language vs shipped-feature language; recurring vocabulary — the verbs and adjectives they use about themselves)
 ## Culture & values (what they publicly emphasize)
 ## What they likely value in this hire
-Keep it under 500 words. Only include facts you found or that were in the brief — no speculation presented as fact.`;
+Keep it under 550 words. Only include facts you found or that were in the brief — no speculation presented as fact.`;
 
 const MARKET_SYSTEM = `You are a labor-market researcher supporting a job applicant.
 Search the web for the current state of this role and industry. Return concise markdown with these sections:
@@ -82,8 +83,11 @@ export async function runResearch(
   analysis: JobAnalysis,
   onAgent: AgentCallback
 ): Promise<ResearchFindings> {
+  const themeLines = analysis.themes.map((t) => `${t.id}: ${t.name}`).join("\n");
   const context = `Target role: ${analysis.role.title} (${analysis.role.seniority}, ${analysis.role.family})
-Company: ${analysis.company.name} — ${analysis.company.industry}, ${analysis.company.market_segment}, stage: ${analysis.company.stage}`;
+Company: ${analysis.company.name} — ${analysis.company.industry}, ${analysis.company.market_segment}, stage: ${analysis.company.stage}
+Themes the posting emphasizes:
+${themeLines}`;
 
   const companyBrief = `${context}\n\nResearch brief: ${analysis.research_queries.company_query}`;
   const marketBrief = `${context}\n\nResearch brief: ${analysis.research_queries.market_query}`;

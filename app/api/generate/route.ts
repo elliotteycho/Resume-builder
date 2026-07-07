@@ -1,16 +1,19 @@
 import { NextRequest } from "next/server";
 import { analyzeJobDescription } from "@/lib/pipeline/analyze";
 import { runResearch } from "@/lib/pipeline/research";
+import { reframeSynthesis } from "@/lib/pipeline/reframe";
 import { synthesizeResume } from "@/lib/pipeline/synthesize";
+import { verifyAndFix } from "@/lib/pipeline/verify";
 import { loadBank } from "@/lib/experienceStore";
 import type { ProgressEvent } from "@/lib/types";
 
 export const runtime = "nodejs";
-// The full pipeline (analysis → parallel web research → synthesis) can take several minutes.
+// The full pipeline (analysis → parallel web research → reframe → synthesis
+// → verification) can take several minutes.
 export const maxDuration = 600;
 
 export async function POST(req: NextRequest) {
-  const { jobDescription } = await req.json();
+  const { jobDescription, guidance } = await req.json();
 
   if (!jobDescription || typeof jobDescription !== "string" || jobDescription.trim().length < 40) {
     return new Response(JSON.stringify({ error: "Please paste a full job description." }), {
@@ -18,6 +21,7 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   }
+  const userGuidance = typeof guidance === "string" ? guidance : undefined;
 
   const encoder = new TextEncoder();
 
@@ -35,7 +39,7 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        send({ type: "stage", stage: "analyzing", detail: "Parsing the job description" });
+        send({ type: "stage", stage: "analyzing", detail: "Reading the posting twice — for what they wrote, and what they need" });
         const [analysis, bank] = await Promise.all([
           analyzeJobDescription(jobDescription),
           loadBank(),
@@ -51,10 +55,17 @@ export async function POST(req: NextRequest) {
           send({ type: "agent", agent, status });
         });
 
-        send({ type: "stage", stage: "synthesizing", detail: "Writing your tailored resume" });
-        const resume = await synthesizeResume(analysis, research, bank);
+        send({ type: "stage", stage: "reframing", detail: "Fusing the posting and research into a reframing map" });
+        const reframe = await reframeSynthesis(analysis, research, bank, userGuidance);
+        send({ type: "reframe", reframe });
 
-        send({ type: "result", resume, research });
+        send({ type: "stage", stage: "synthesizing", detail: "Writing bullets that embody the themes" });
+        const draft = await synthesizeResume(analysis, research, reframe, bank, userGuidance);
+
+        send({ type: "stage", stage: "verifying", detail: "Checking hard rules: unique verbs, no lifted phrases, clean punctuation" });
+        const { resume, report } = await verifyAndFix(draft, jobDescription);
+
+        send({ type: "result", resume, research, reframe, verification: report });
         send({ type: "stage", stage: "done" });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Generation failed";

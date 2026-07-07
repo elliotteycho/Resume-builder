@@ -25,7 +25,7 @@ export default function ResumeView({ resume }: { resume: Resume }) {
               {entry.bullets.length > 0 && (
                 <ul className="res-bullets">
                   {entry.bullets.map((b, bi) => (
-                    <li key={bi}>{b}</li>
+                    <li key={bi}>{b.text}</li>
                   ))}
                 </ul>
               )}
@@ -51,7 +51,7 @@ export function resumeToMarkdown(resume: Resume): string {
       }
       if (entry.subheading) lines.push(`*${entry.subheading}*`);
       if (entry.inline) lines.push(entry.inline);
-      for (const b of entry.bullets) lines.push(`- ${b}`);
+      for (const b of entry.bullets) lines.push(`- ${b.text}`);
       lines.push("");
     }
   }

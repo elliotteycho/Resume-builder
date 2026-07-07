@@ -15,10 +15,22 @@ export const JobAnalysisSchema = z.object({
     seniority: z.string().describe("Seniority level: intern, entry, mid, senior, staff/principal, manager, director, executive"),
     location_type: z.string().describe("onsite, hybrid, remote, or unknown"),
   }),
+  themes: z
+    .array(
+      z.object({
+        id: z.string().describe("Short id: T1, T2, T3..."),
+        name: z.string().describe("Concept-level theme name, e.g. 'deciding what matters when everything competes for attention' — NOT a keyword"),
+        evidence: z.string().describe("What in the posting signals this theme (order, repetition, 'we value' lines read as clues not answers)"),
+      })
+    )
+    .describe("4-7 concept-level themes the resume must EMBODY. Themes are found beneath the bullet list — what actually makes someone succeed in this role. 'Skillful prioritization with stakeholders' is a theme; 'Jira' is a keyword."),
+  success_factors: z
+    .array(z.string())
+    .describe("What makes someone succeed in this role — often implied rather than written"),
   requirements: z.object({
+    non_negotiable: z.array(z.string()).describe("Requirements that are truly load-bearing — the order, repetition, and language of the posting tell you"),
+    decoration: z.array(z.string()).describe("Listed requirements that are actually background/nice-to-have decoration"),
     hard_skills: z.array(z.string()).describe("Concrete skills, tools, technologies, certifications explicitly required or preferred"),
-    soft_skills: z.array(z.string()).describe("Soft skills and behavioral traits emphasized"),
-    responsibilities: z.array(z.string()).describe("Core responsibilities of the role, condensed"),
     qualifications: z.array(z.string()).describe("Education, years of experience, licenses, clearances required"),
   }),
   ats_keywords: z
@@ -38,10 +50,51 @@ export type JobAnalysis = z.infer<typeof JobAnalysisSchema>;
 // ---------- Research ----------
 
 export type ResearchFindings = {
-  company: string;   // markdown findings about the company
+  company: string;   // markdown findings about the company (including voice notes)
   market: string;    // markdown findings about the role/market
   conventions: string; // markdown findings about resume conventions for this role/industry
 };
+
+// ---------- Reframe synthesis (fuses JD parsing + company research) ----------
+
+export const ReframeSchema = z.object({
+  company_beliefs: z
+    .array(z.string())
+    .describe("3-5 statement belief vector compressing what this company believes about itself, its customers, and how work gets done — drawn from research, not the JD alone"),
+  demands: z
+    .array(
+      z.object({
+        demand: z.string().describe("What the role actually demands, concept-level"),
+        tag: z.enum(["required", "qualification", "preference"]).describe("required = non-negotiable, qualification = screening bar, preference = decoration"),
+      })
+    )
+    .describe("4-7 ranked demand vector distilled from the posting, most load-bearing first"),
+  voice: z.object({
+    tone: z.string().describe("Company tone: formal vs casual, builder vs operator, technical vs strategic"),
+    altitude: z.string().describe("Vision language vs shipped-feature language — where this company speaks"),
+    vocabulary: z.array(z.string()).describe("Recurring words this company uses about itself, especially verbs and adjectives"),
+    one_liner: z.string().describe("The company's own framing of what it does"),
+  }),
+  directives: z
+    .array(
+      z.object({
+        experience: z.string().describe("Exact name of the experience/project/leadership entry from the candidate's bank"),
+        themes: z.array(z.string()).describe("Theme ids (T1, T2...) this entry will carry — the 1-3 themes it genuinely demonstrates"),
+        verb_register: z
+          .string()
+          .describe("Which verb register the bullets should lead with: diagnostic, listening, weighing, clarity, imagination, building, or doer — matched to the themes carried"),
+        framing_angle: z.string().describe("One line: how to frame this entry so its themes come through"),
+        anchor_metric: z.string().describe("The strongest verified metric from the bank to anchor this entry's bullets; empty string if none exists"),
+        rationale: z.string().describe("One line: why this entry earned its slot over alternatives"),
+      })
+    )
+    .describe("Per-entry reframe directives for the entries selected for highest theme density. Select entries so the resume as a whole covers all themes; each entry picks its spots."),
+  excluded_notes: z
+    .string()
+    .describe("One or two sentences on strong bank entries deliberately left off and why; empty string if nothing notable was cut"),
+});
+
+export type Reframe = z.infer<typeof ReframeSchema>;
 
 // ---------- Experience bank ----------
 
@@ -99,6 +152,11 @@ export type ExperienceBank = z.infer<typeof ExperienceBankSchema>;
 
 // ---------- Generated resume ----------
 
+export const ResumeBulletSchema = z.object({
+  text: z.string().describe("The bullet text — Action, Responsibility, Impact order; leads with a verb from the entry's assigned register"),
+  themes: z.array(z.string()).describe("Theme ids (T1, T2...) this bullet carries — one or two, never all of them"),
+});
+
 export const ResumeSchema = z.object({
   header: z.object({
     name: z.string(),
@@ -116,8 +174,8 @@ export const ResumeSchema = z.object({
           z.object({
             heading: z.string().describe("Entry heading, e.g. role title"),
             subheading: z.string().describe("Organization · location, or equivalent; empty string if none"),
-            dates: z.string().describe("Date range; empty string if none"),
-            bullets: z.array(z.string()).describe("Tailored achievement bullets; empty array for list-style sections"),
+            dates: z.string().describe("Date range formatted 'Month Year - Month Year' with a plain ASCII hyphen; empty string if none"),
+            bullets: z.array(ResumeBulletSchema).describe("Tailored achievement bullets; empty array for list-style sections"),
             inline: z.string().describe("For list-style sections (skills, certifications): comma-separated content; else empty string"),
           })
         ),
@@ -133,11 +191,27 @@ export const ResumeSchema = z.object({
 
 export type Resume = z.infer<typeof ResumeSchema>;
 
+// ---------- Verification ----------
+
+export type VerificationCheck = {
+  name: string;
+  passed: boolean;
+  severity: "fail" | "warn";
+  details: string[];
+};
+
+export type VerificationReport = {
+  passed: boolean;
+  revised: boolean; // whether an automatic fix pass ran
+  checks: VerificationCheck[];
+};
+
 // ---------- SSE progress events ----------
 
 export type ProgressEvent =
   | { type: "stage"; stage: string; detail?: string }
   | { type: "agent"; agent: "company" | "market" | "conventions"; status: "running" | "done"; detail?: string }
   | { type: "analysis"; analysis: JobAnalysis }
-  | { type: "result"; resume: Resume; research: ResearchFindings }
+  | { type: "reframe"; reframe: Reframe }
+  | { type: "result"; resume: Resume; research: ResearchFindings; reframe: Reframe; verification: VerificationReport }
   | { type: "error"; message: string };
