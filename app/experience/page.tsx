@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ExperienceBank } from "@/lib/types";
+import { extractMetricTokens, normalizeToken } from "@/lib/evidence";
+import type { Evidence, ExperienceBank } from "@/lib/types";
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 
@@ -91,7 +92,7 @@ export default function ExperiencePage() {
           onClick={() =>
             set({
               work: [
-                { id: newId(), title: "", organization: "", location: "", start: "", end: "", bullets: [], skills: [] },
+                { id: newId(), title: "", organization: "", location: "", start: "", end: "", bullets: [], skills: [], evidence: [] },
                 ...bank.work,
               ],
             })
@@ -121,6 +122,11 @@ export default function ExperiencePage() {
             value={w.skills.join(", ")}
             onChange={(v) => set({ work: patch(bank.work, i, { skills: splitList(v) }) })}
           />
+          <EvidenceEditor
+            evidence={w.evidence}
+            bullets={w.bullets}
+            onChange={(evidence) => set({ work: patch(bank.work, i, { evidence }) })}
+          />
           <button className="small" onClick={() => set({ work: bank.work.filter((_, j) => j !== i) })}>
             Remove
           </button>
@@ -133,7 +139,7 @@ export default function ExperiencePage() {
         <button
           className="ghost small"
           onClick={() =>
-            set({ projects: [{ id: newId(), name: "", description: "", bullets: [], skills: [], link: "" }, ...bank.projects] })
+            set({ projects: [{ id: newId(), name: "", description: "", bullets: [], skills: [], link: "", evidence: [] }, ...bank.projects] })
           }
         >
           + Add
@@ -155,6 +161,11 @@ export default function ExperiencePage() {
             label="Skills used (comma-separated)"
             value={p.skills.join(", ")}
             onChange={(v) => set({ projects: patch(bank.projects, i, { skills: splitList(v) }) })}
+          />
+          <EvidenceEditor
+            evidence={p.evidence}
+            bullets={[p.description, ...p.bullets]}
+            onChange={(evidence) => set({ projects: patch(bank.projects, i, { evidence }) })}
           />
           <button className="small" onClick={() => set({ projects: bank.projects.filter((_, j) => j !== i) })}>
             Remove
@@ -206,6 +217,96 @@ export default function ExperiencePage() {
         </button>
         {savedAt && <span className="saved-flash">Saved ✓</span>}
       </div>
+    </div>
+  );
+}
+
+function EvidenceEditor({
+  evidence,
+  bullets,
+  onChange,
+}: {
+  evidence: Evidence[];
+  bullets: string[];
+  onChange: (evidence: Evidence[]) => void;
+}) {
+  function scan() {
+    const covered = new Set(
+      evidence.flatMap((e) => extractMetricTokens(e.metric).map(normalizeToken))
+    );
+    const found: Evidence[] = [];
+    for (const b of bullets) {
+      for (const token of extractMetricTokens(b)) {
+        const norm = normalizeToken(token);
+        if (covered.has(norm)) continue;
+        covered.add(norm);
+        found.push({ metric: token, claim: b, provenance: "", confidence: "medium" });
+      }
+    }
+    if (found.length > 0) onChange([...evidence, ...found]);
+  }
+
+  const update = (i: number, changes: Partial<Evidence>) =>
+    onChange(evidence.map((e, j) => (j === i ? { ...e, ...changes } : e)));
+
+  return (
+    <div className="evidence-block">
+      <div className="evidence-head">
+        <span className="evidence-title">
+          Verified metrics — the only numbers allowed on a resume for this entry
+        </span>
+        <span className="row" style={{ gap: 6 }}>
+          <button type="button" className="ghost small" onClick={scan}>
+            Scan bullets for metrics
+          </button>
+          <button
+            type="button"
+            className="ghost small"
+            onClick={() => onChange([...evidence, { metric: "", claim: "", provenance: "", confidence: "medium" }])}
+          >
+            + Add
+          </button>
+        </span>
+      </div>
+      {evidence.length === 0 && (
+        <p className="evidence-empty">
+          No evidence yet — bullets for this entry will be generated without numbers.
+        </p>
+      )}
+      {evidence.map((e, i) => (
+        <div className="evidence-row" key={i}>
+          <input
+            type="text"
+            placeholder="Metric (verbatim), e.g. 40%"
+            value={e.metric}
+            onChange={(ev) => update(i, { metric: ev.target.value })}
+          />
+          <input
+            type="text"
+            placeholder="What it substantiates"
+            value={e.claim}
+            onChange={(ev) => update(i, { claim: ev.target.value })}
+          />
+          <input
+            type="text"
+            placeholder="Provenance (report, dashboard…)"
+            value={e.provenance}
+            onChange={(ev) => update(i, { provenance: ev.target.value })}
+          />
+          <select
+            value={e.confidence}
+            onChange={(ev) => update(i, { confidence: ev.target.value as Evidence["confidence"] })}
+            title="Low-confidence evidence is invisible to the generator"
+          >
+            <option value="high">high</option>
+            <option value="medium">medium</option>
+            <option value="low">low (hidden)</option>
+          </select>
+          <button type="button" className="small" onClick={() => onChange(evidence.filter((_, j) => j !== i))}>
+            ×
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

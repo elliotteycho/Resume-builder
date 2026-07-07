@@ -84,7 +84,7 @@ export const ReframeSchema = z.object({
           .string()
           .describe("Which verb register the bullets should lead with: diagnostic, listening, weighing, clarity, imagination, building, or doer — matched to the themes carried"),
         framing_angle: z.string().describe("One line: how to frame this entry so its themes come through"),
-        anchor_metric: z.string().describe("The strongest verified metric from the bank to anchor this entry's bullets; empty string if none exists"),
+        anchor_metric: z.string().describe("The strongest metric for this entry, copied VERBATIM from one of its evidence records; empty string if the entry has no visible evidence"),
         rationale: z.string().describe("One line: why this entry earned its slot over alternatives"),
       })
     )
@@ -98,6 +98,15 @@ export type Reframe = z.infer<typeof ReframeSchema>;
 
 // ---------- Experience bank ----------
 
+export const EvidenceSchema = z.object({
+  metric: z.string().describe("The verbatim metric token with minimal context, e.g. '40%', '198 charities', '$1.8M' — this exact number is the only form allowed on a resume"),
+  claim: z.string().describe("What the metric substantiates"),
+  provenance: z.string().default("").describe("Where the number comes from: report, dashboard, email, commit history…"),
+  confidence: z.enum(["high", "medium", "low"]).describe("low-confidence evidence is invisible to the generator entirely"),
+});
+
+export type Evidence = z.infer<typeof EvidenceSchema>;
+
 export const WorkExperienceSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -105,8 +114,9 @@ export const WorkExperienceSchema = z.object({
   location: z.string().optional().default(""),
   start: z.string(),
   end: z.string(),
-  bullets: z.array(z.string()).describe("Everything you did/achieved, with metrics where possible — the fuller the better"),
+  bullets: z.array(z.string()).describe("Everything you did/achieved — the fuller the better; numbers must be backed by evidence records to appear on a resume"),
   skills: z.array(z.string()).default([]),
+  evidence: z.array(EvidenceSchema).default([]).describe("Verified metrics for this entry with provenance and confidence"),
 });
 
 export const ProjectSchema = z.object({
@@ -116,6 +126,7 @@ export const ProjectSchema = z.object({
   bullets: z.array(z.string()).default([]),
   skills: z.array(z.string()).default([]),
   link: z.string().optional().default(""),
+  evidence: z.array(EvidenceSchema).default([]).describe("Verified metrics for this entry with provenance and confidence"),
 });
 
 export const EducationSchema = z.object({
@@ -191,6 +202,15 @@ export const ResumeSchema = z.object({
 
 export type Resume = z.infer<typeof ResumeSchema>;
 
+// ---------- Metric audit ----------
+
+export type MetricAuditEntry = {
+  token: string;
+  entry: string;
+  provenance: string;
+  confidence: "high" | "medium" | "identity";
+};
+
 // ---------- Verification ----------
 
 export type VerificationCheck = {
@@ -213,5 +233,12 @@ export type ProgressEvent =
   | { type: "agent"; agent: "company" | "market" | "conventions"; status: "running" | "done"; detail?: string }
   | { type: "analysis"; analysis: JobAnalysis }
   | { type: "reframe"; reframe: Reframe }
-  | { type: "result"; resume: Resume; research: ResearchFindings; reframe: Reframe; verification: VerificationReport }
+  | {
+      type: "result";
+      resume: Resume;
+      research: ResearchFindings;
+      reframe: Reframe;
+      verification: VerificationReport;
+      metric_audit: MetricAuditEntry[];
+    }
   | { type: "error"; message: string };

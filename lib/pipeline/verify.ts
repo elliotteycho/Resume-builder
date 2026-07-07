@@ -1,6 +1,7 @@
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { getClient, MODEL } from "@/lib/anthropic";
 import { SYNTHESIS_RULES } from "@/lib/pipeline/synthesize";
+import { extractMetricTokens, normalizeToken, REDACTION_MARKER } from "@/lib/evidence";
 import {
   ResumeSchema,
   type Resume,
@@ -45,7 +46,11 @@ function shingles(words: string[], n: number): Set<string> {
 /**
  * Deterministic rule checks — code, not model judgment.
  */
-export function runChecks(resume: Resume, jobDescription: string): VerificationCheck[] {
+export function runChecks(
+  resume: Resume,
+  jobDescription: string,
+  allowedTokens?: Set<string>
+): VerificationCheck[] {
   const bullets = collectBullets(resume);
   const checks: VerificationCheck[] = [];
 
@@ -105,7 +110,37 @@ export function runChecks(resume: Resume, jobDescription: string): VerificationC
     details: liftHits,
   });
 
-  // 4. Bullet length ceiling (warn only)
+  // 4. Metrics verbatim from evidence — every numeric token in output must
+  //    have been shown to the generator (retrieval decides the facts)
+  if (allowedTokens) {
+    const metricHits: string[] = [];
+    const scanMetrics = (label: string, text: string) => {
+      if (text.includes("[unverified")) {
+        metricHits.push(`${label}: leaked redaction marker "${REDACTION_MARKER}"`);
+      }
+      for (const token of extractMetricTokens(text)) {
+        if (!allowedTokens.has(normalizeToken(token))) {
+          metricHits.push(`${label}: "${token}" is not a verified metric from the experience bank`);
+        }
+      }
+    };
+    scanMetrics("tagline", resume.header.tagline);
+    scanMetrics("summary", resume.summary);
+    for (const b of bullets) scanMetrics(b.location, b.text);
+    for (const section of resume.sections) {
+      for (const entry of section.entries) {
+        scanMetrics(`${entry.heading || section.title} inline`, entry.inline);
+      }
+    }
+    checks.push({
+      name: "Metrics verbatim from verified evidence",
+      passed: metricHits.length === 0,
+      severity: "fail",
+      details: metricHits,
+    });
+  }
+
+  // 5. Bullet length ceiling (warn only)
   const longHits = bullets
     .filter((b) => b.text.length > MAX_BULLET_CHARS)
     .map((b) => `${b.location}: ${b.text.length} chars`);
@@ -116,7 +151,7 @@ export function runChecks(resume: Resume, jobDescription: string): VerificationC
     details: longHits,
   });
 
-  // 5. Metric coverage (informational warn)
+  // 6. Metric coverage (informational warn)
   const withNumbers = bullets.filter((b) => /\d/.test(b.text)).length;
   const ratio = bullets.length > 0 ? withNumbers / bullets.length : 1;
   checks.push({
@@ -133,12 +168,21 @@ function hardFailures(checks: VerificationCheck[]): VerificationCheck[] {
   return checks.filter((c) => !c.passed && c.severity === "fail");
 }
 
-async function reviseResume(resume: Resume, failures: VerificationCheck[]): Promise<Resume> {
+async function reviseResume(
+  resume: Resume,
+  failures: VerificationCheck[],
+  evidenceLines: string[]
+): Promise<Resume> {
   const client = getClient();
 
   const issueList = failures
     .map((c) => `- ${c.name}:\n${c.details.map((d) => `    ${d}`).join("\n")}`)
     .join("\n");
+
+  const evidenceBlock =
+    evidenceLines.length > 0
+      ? `\n\nThe ONLY numbers permitted on this resume are these verified metrics (copy tokens character-for-character) plus identity facts already in the resume (education, certifications, awards, dates):\n${evidenceLines.map((l) => `- ${l}`).join("\n")}`
+      : "";
 
   const response = await client.messages.parse({
     model: MODEL,
@@ -147,10 +191,10 @@ async function reviseResume(resume: Resume, failures: VerificationCheck[]): Prom
     output_config: {
       format: zodOutputFormat(ResumeSchema),
     },
-    system: `You are revising a generated resume that failed automated rule checks. Fix ONLY the reported violations — rewrite the offending bullets (or characters) while preserving each bullet's meaning, metrics, themes, and verb register family. Change nothing else.
+    system: `You are revising a generated resume that failed automated rule checks. Fix ONLY the reported violations — rewrite the offending bullets (or characters) while preserving each bullet's meaning, themes, and verb register family. If a bullet uses a number that is not a verified metric, either replace it with the correct verbatim metric token from the evidence list or rewrite the bullet without a number. Change nothing else.
 
 The rules being enforced:
-${SYNTHESIS_RULES}`,
+${SYNTHESIS_RULES}${evidenceBlock}`,
     messages: [
       {
         role: "user",
@@ -180,17 +224,18 @@ Return the corrected resume.`,
  */
 export async function verifyAndFix(
   resume: Resume,
-  jobDescription: string
+  jobDescription: string,
+  evidence?: { allowedTokens: Set<string>; evidenceLines: string[] }
 ): Promise<{ resume: Resume; report: VerificationReport }> {
-  let checks = runChecks(resume, jobDescription);
+  let checks = runChecks(resume, jobDescription, evidence?.allowedTokens);
   let failures = hardFailures(checks);
   let revised = false;
   let current = resume;
 
   if (failures.length > 0) {
-    current = await reviseResume(current, failures);
+    current = await reviseResume(current, failures, evidence?.evidenceLines ?? []);
     revised = true;
-    checks = runChecks(current, jobDescription);
+    checks = runChecks(current, jobDescription, evidence?.allowedTokens);
     failures = hardFailures(checks);
   }
 

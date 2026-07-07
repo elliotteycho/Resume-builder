@@ -4,6 +4,7 @@ import { runResearch } from "@/lib/pipeline/research";
 import { reframeSynthesis } from "@/lib/pipeline/reframe";
 import { synthesizeResume } from "@/lib/pipeline/synthesize";
 import { verifyAndFix } from "@/lib/pipeline/verify";
+import { buildGeneratorView, buildMetricAudit } from "@/lib/evidence";
 import { loadBank } from "@/lib/experienceStore";
 import type { ProgressEvent } from "@/lib/types";
 
@@ -46,6 +47,10 @@ export async function POST(req: NextRequest) {
         ]);
         send({ type: "analysis", analysis });
 
+        // Retrieval decides the facts: low-confidence evidence and untagged
+        // numbers never reach any prompt.
+        const view = buildGeneratorView(bank);
+
         send({
           type: "stage",
           stage: "researching",
@@ -56,16 +61,26 @@ export async function POST(req: NextRequest) {
         });
 
         send({ type: "stage", stage: "reframing", detail: "Fusing the posting and research into a reframing map" });
-        const reframe = await reframeSynthesis(analysis, research, bank, userGuidance);
+        const reframe = await reframeSynthesis(analysis, research, view.visibleBank, userGuidance);
         send({ type: "reframe", reframe });
 
         send({ type: "stage", stage: "synthesizing", detail: "Writing bullets that embody the themes" });
-        const draft = await synthesizeResume(analysis, research, reframe, bank, userGuidance);
+        const draft = await synthesizeResume(analysis, research, reframe, view.visibleBank, userGuidance);
 
-        send({ type: "stage", stage: "verifying", detail: "Checking hard rules: unique verbs, no lifted phrases, clean punctuation" });
-        const { resume, report } = await verifyAndFix(draft, jobDescription);
+        send({ type: "stage", stage: "verifying", detail: "Checking hard rules: verbatim metrics, unique verbs, no lifted phrases" });
+        const { resume, report } = await verifyAndFix(draft, jobDescription, {
+          allowedTokens: view.allowedTokens,
+          evidenceLines: view.evidenceLines,
+        });
 
-        send({ type: "result", resume, research, reframe, verification: report });
+        send({
+          type: "result",
+          resume,
+          research,
+          reframe,
+          verification: report,
+          metric_audit: buildMetricAudit(resume, view.evidenceIndex),
+        });
         send({ type: "stage", stage: "done" });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Generation failed";

@@ -22,7 +22,7 @@ BULLET CRAFT (follow the per-entry directives from the reframing map):
 - Aim for 150-200 characters per bullet — substantial but tight; never exceed 210.
 
 HARD RULES (violations will be rejected by an automated verifier):
-1. NEVER fabricate. Every claim and every number must trace to the experience bank. Requirements the bank can't support go in tailoring_notes.gaps — never invented.
+1. RETRIEVAL DECIDES THE FACTS; YOU DECIDE ONLY SELECTION AND PHRASING. Every number on the resume must be copied CHARACTER-FOR-CHARACTER from the bank's evidence records or its identity facts (education, certifications, awards, dates). Never regenerate, round, combine, or paraphrase a number — writing "over 20%" when the evidence says "23%" is fabrication, and so is promoting "12" to "a dozen major". If no verified metric supports a claim, write the bullet without a number; a strong qualitative bullet beats an invented quantitative one. The marker "[unverified metric removed]" flags numbers you are NOT permitted to use — never reproduce the marker and never guess what it hid. Requirements the bank can't support go in tailoring_notes.gaps — never invented.
 2. No two bullets anywhere on the resume start with the same first verb.
 3. No em dashes or en dashes anywhere. No smart/curly quotes. Plain ASCII punctuation only.
 4. Date ranges use a plain ASCII hyphen: "January 2026 - April 2026".

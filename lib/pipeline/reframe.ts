@@ -16,7 +16,9 @@ Produce:
 1. A belief vector: 3-5 statements compressing what this company believes — about itself, its customers, how work gets done. Draw from the research (mission, values, voice), not the JD alone.
 2. A demand vector: 4-7 ranked demands from the posting, tagged required / qualification / preference. Most load-bearing first.
 3. Voice notes: tone, altitude, recurring vocabulary, one-liner — absorbed from the research so the writer can write IN the company's voice without ever pasting its phrases.
-4. An embodiment matrix, expressed as per-entry directives: cross the demands and themes against the candidate's actual experiences. For each theme, ask: which experiences GENUINELY demonstrate this? Select the entries with highest theme density — the resume as a whole must cover all themes; each entry picks its one to three spots. For each selected entry emit: themes carried, verb register, framing angle, anchor metric (a verified number from the bank — never invented), and a one-line rationale.
+4. An embodiment matrix, expressed as per-entry directives: cross the demands and themes against the candidate's actual experiences. For each theme, ask: which experiences GENUINELY demonstrate this? Select the entries with highest theme density — the resume as a whole must cover all themes; each entry picks its one to three spots. For each selected entry emit: themes carried, verb register, framing angle, anchor metric, and a one-line rationale.
+
+Anchor metrics: each entry's evidence records are the ONLY source of numbers. Copy the anchor metric verbatim from an evidence record's metric field — never invent, round, or rephrase it. If an entry has no evidence records, its anchor_metric is an empty string and its bullets will be qualitative. Ignore any "[unverified metric removed]" markers in prose — those numbers are off-limits.
 
 Verb registers (choose per entry, matched to its themes):
 - diagnostic: Diagnosed, Surfaced, Reframed, Identified, Untangled, Pressure-tested

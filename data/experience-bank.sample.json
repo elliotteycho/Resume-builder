@@ -18,9 +18,41 @@
       "bullets": [
         "Built a patient-intake data pipeline in Python and PostgreSQL that reduced manual chart-prep time by 40% across 3 clinics",
         "Wrote integration tests raising service coverage from 55% to 85%, catching 12 regressions before release",
-        "Presented pipeline redesign to a 10-person engineering org; proposal adopted for the Q4 roadmap"
+        "Presented pipeline redesign to a 10-person engineering org; proposal adopted for the next quarter's roadmap"
       ],
-      "skills": ["Python", "PostgreSQL", "pytest", "ETL", "HIPAA awareness"]
+      "skills": ["Python", "PostgreSQL", "pytest", "ETL", "HIPAA awareness"],
+      "evidence": [
+        {
+          "metric": "40%",
+          "claim": "reduction in manual chart-prep time from the intake pipeline",
+          "provenance": "clinic ops time-tracking comparison, Aug 2025",
+          "confidence": "high"
+        },
+        {
+          "metric": "3 clinics",
+          "claim": "clinics the pipeline was deployed across",
+          "provenance": "deployment checklist",
+          "confidence": "high"
+        },
+        {
+          "metric": "55% to 85%",
+          "claim": "integration test coverage increase",
+          "provenance": "CI coverage report before/after",
+          "confidence": "high"
+        },
+        {
+          "metric": "12 regressions",
+          "claim": "regressions caught by the new tests before release",
+          "provenance": "release QA log",
+          "confidence": "medium"
+        },
+        {
+          "metric": "10-person",
+          "claim": "size of the engineering org presented to",
+          "provenance": "rough headcount from memory",
+          "confidence": "low"
+        }
+      ]
     },
     {
       "id": "w2",
@@ -33,7 +65,21 @@
         "Led weekly recitations for 60+ students; office-hour attendance doubled after introducing worked-example sessions",
         "Graded and gave feedback on 400+ C++ assignments per semester"
       ],
-      "skills": ["C++", "Teaching", "Communication"]
+      "skills": ["C++", "Teaching", "Communication"],
+      "evidence": [
+        {
+          "metric": "60+ students",
+          "claim": "weekly recitation attendance",
+          "provenance": "course enrollment roster",
+          "confidence": "high"
+        },
+        {
+          "metric": "400+",
+          "claim": "C++ assignments graded per semester",
+          "provenance": "gradebook export",
+          "confidence": "medium"
+        }
+      ]
     }
   ],
   "projects": [
@@ -46,7 +92,15 @@
         "Implemented optimistic-concurrency handling that eliminated double-settlement bugs"
       ],
       "skills": ["Node.js", "React", "AWS", "CI/CD"],
-      "link": "github.com/alexrivera/splitstream"
+      "link": "github.com/alexrivera/splitstream",
+      "evidence": [
+        {
+          "metric": "200+",
+          "claim": "active student users",
+          "provenance": "analytics dashboard, spring 2026",
+          "confidence": "medium"
+        }
+      ]
     }
   ],
   "education": [

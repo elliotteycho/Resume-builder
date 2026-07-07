@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import ResumeView, { resumeToMarkdown } from "@/components/ResumeView";
 import type {
   JobAnalysis,
+  MetricAuditEntry,
   ProgressEvent,
   Reframe,
   ResearchFindings,
@@ -41,6 +42,7 @@ export default function GeneratePage() {
   const [resume, setResume] = useState<Resume | null>(null);
   const [research, setResearch] = useState<ResearchFindings | null>(null);
   const [verification, setVerification] = useState<VerificationReport | null>(null);
+  const [metricAudit, setMetricAudit] = useState<MetricAuditEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -53,6 +55,7 @@ export default function GeneratePage() {
     setAnalysis(null);
     setReframe(null);
     setVerification(null);
+    setMetricAudit([]);
     setStage("analyzing");
     setAgents({ company: "idle", market: "idle", conventions: "idle" });
 
@@ -113,6 +116,7 @@ export default function GeneratePage() {
         setResearch(event.research);
         setReframe(event.reframe);
         setVerification(event.verification);
+        setMetricAudit(event.metric_audit);
         setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
         break;
       case "error":
@@ -307,6 +311,19 @@ export default function GeneratePage() {
                     {reframe.excluded_notes ? `\n\nLeft off: ${reframe.excluded_notes}` : ""}
                   </div>
                 </details>
+                {metricAudit.length > 0 && (
+                  <details className="research">
+                    <summary>Metric audit — every number traced to its source</summary>
+                    <div className="research-md">
+                      {metricAudit
+                        .map(
+                          (a) =>
+                            `${a.token}  →  ${a.entry}${a.provenance ? ` — ${a.provenance}` : ""}  [${a.confidence}]`
+                        )
+                        .join("\n")}
+                    </div>
+                  </details>
+                )}
                 <details className="research">
                   <summary>Bullet-by-bullet theme map</summary>
                   <div className="research-md">

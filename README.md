@@ -17,7 +17,16 @@ Paste a posting and the pipeline runs five stages:
    - No 5+ consecutive words lifted verbatim from the posting
    - Bullet length ceiling and metric-density warnings
 
-**Never fabricates.** Every claim must trace to your experience bank; requirements the bank can't support are reported honestly as gaps.
+## The evidence layer: retrieval decides the facts
+
+A model told to "formulate bullets" will invent confident numbers — it rounds 23% into "over 20%" and reaches for impressive low-confidence figures because they read well. So facts and phrasing are split architecturally, not by prompt:
+
+- **Evidence records.** Each work/project entry carries evidence records: the verbatim metric token, the claim it substantiates, its provenance, and a confidence tag (`high` / `medium` / `low`). The editor has a "Scan bullets for metrics" button to bootstrap these from existing prose.
+- **The generator view.** Before any prompt, the bank is filtered: `low`-confidence evidence is removed entirely (invisible to the generator), and numeric tokens in prose that aren't backed by visible evidence are redacted. The generator chooses *which* evidence to feature and writes the surrounding context — it never decides what a number is.
+- **The verbatim check.** The verifier extracts every numeric token from the output and requires each to appear verbatim in what the generator was shown (bare years and dates exempt). Rounding drift fails by construction; violations trigger the automatic revision pass, which receives the list of permitted metrics.
+- **The metric audit.** The results page traces every number on the final resume back to its evidence record and provenance.
+
+Requirements the bank can't support are reported honestly as gaps — never invented.
 
 Built with Next.js + TypeScript and the [Anthropic API](https://platform.claude.com/) (Claude Opus 4.8, web search server tool, structured outputs, adaptive thinking).
 
@@ -48,7 +57,8 @@ app/
   api/experience/route.ts     # Experience bank load/save
   api/export/docx/route.ts    # ATS-clean .docx export
 lib/
-  types.ts                    # Zod schemas: analysis (themes), reframe map, bank, resume, verification
+  types.ts                    # Zod schemas: analysis (themes), reframe map, bank + evidence, resume, verification
+  evidence.ts                 # Metric-token semantics, generator view (redaction + confidence filter), metric audit
   anthropic.ts                # Anthropic client (Claude Opus 4.8)
   pipeline/analyze.ts         # Two-read JD analysis with theme extraction
   pipeline/research.ts        # 3 parallel web_search agents incl. company voice scan
