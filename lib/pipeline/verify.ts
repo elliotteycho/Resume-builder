@@ -10,7 +10,7 @@ import {
 } from "@/lib/types";
 
 const FORBIDDEN_CHARS = /[—–“”‘’]/; // em dash, en dash, smart quotes
-const MAX_BULLET_CHARS = 210;
+const MAX_BULLET_CHARS = 215; // calibrated to the canonical Appian layout: its two-line bullets run up to ~213
 const MIN_BULLET_CHARS = 150; // shorter bullets end mid-line and waste keyword space
 const LIFT_SHINGLE_WORDS = 5;
 
