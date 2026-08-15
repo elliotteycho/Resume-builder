@@ -1,34 +1,50 @@
-# Resume Builder
+# Internship HQ
 
-A job-description-driven resume builder built on an **embodiment** philosophy: the job description is the gravitational center. The resume isn't scored against it — it's rewritten around it, so the result reads like it was written by someone already inside the company.
+A recruiting CRM for students. Import your resume once, and the app turns it into experience cards, matches those cards against a shared database of real postings, tells you which windows open when, researches each company through the lens of your school and your network, and tracks every application as a task list that computes itself.
 
-Paste a posting and the pipeline runs five stages:
+The resume builder is still here — it's now the last step of a longer flow rather than the whole product.
 
-1. **Analyze** — reads the posting twice (what they wrote, then what they need). Extracts the company, role, seniority, industry, and — crucially — 4–7 **concept-level themes** beneath the bullet list ("deciding what matters when everything competes for attention" is a theme; "Jira" is a keyword). Also: success factors, non-negotiable vs decorative requirements, and exact ATS keywords.
-2. **Research (3 parallel agents)** — simultaneous web-search agents gather *current* data:
-   - **Company intel** — news, funding, products, culture, and a **voice scan** (tone, altitude, recurring vocabulary)
-   - **Role & market** — what the role demands right now, in-demand skills, trends
-   - **Resume conventions** — how resumes are expected to look for *this* role in *this* industry (finance ≠ nursing ≠ software)
-3. **Reframe synthesis** — fuses the posting and the research into a build brief: a company **belief vector** (3–5 statements), a ranked **demand vector** (required / qualification / preference), voice notes, and **per-entry directives** — which experiences carry which themes, what verb register to lead with (diagnostic, listening, weighing, clarity, imagination, building, doer), the framing angle, and the anchor metric.
-4. **Synthesize** — writes the resume from the directives. Bullets follow Action–Responsibility–Impact order, each carries one or two themes (never all), verbs embody the themes ("Diagnosed the growth bottleneck by auditing 198 accounts" beats "Owned production audit of 198 accounts"), and the company's voice is absorbed — never pasted.
-5. **Verify** — deterministic code checks (not model judgment) enforce the hard rules; violations trigger one automatic revision pass, and the final report is shown:
-   - No two bullets start with the same first verb
-   - No em/en dashes or smart quotes anywhere
-   - No 5+ consecutive words lifted verbatim from the posting
-   - Bullet length ceiling and metric-density warnings
+## The flow
 
-## The evidence layer: retrieval decides the facts
+1. **Import your resume** (`/profile`). PDF, Word, or pasted text. Bullets are copied verbatim; every number becomes an evidence record for you to confirm; each entry gets concept-level *capabilities* derived from what the work actually required.
+2. **See your season** (`/`). A shared posting database seeded with a real PM-intern cycle: who opens when, which windows are days rather than weeks, and what has to be ready before each door opens.
+3. **Match** — one cheap scored call per posting. Eligibility is checked in code first, so a posting you're categorically barred from costs nothing and never shows up as a maybe. What comes back is a score, the specific cards that answer the posting's themes, and honest gaps.
+4. **Research the company and the room** — what they do, how they hire, where your school connects, and 3–5 people worth reaching, warmest first, each with the search that finds them, one clear ask, and a message you could send as written.
+5. **Apply, then work the pipeline** — stage changes, notes, contacts, and touch dates feed a "do next" queue that is recomputed on every read.
+6. **Generate a tailored resume** (`/generate`) for a specific posting, from the same cards.
+
+## What makes the matching trustworthy
+
+**Eligibility is code, not model judgment.** The enrichment agent extracts a posting's hard criteria once — graduation window, class standing, degree level, GPA floor, work authorization — and every check after that is `lib/hq/eligibility.ts`: pure, deterministic, and free. A hard fail short-circuits before any model call. Blockers are stated plainly; anything conditional becomes a warning rather than a silent pass.
+
+**The evidence layer carries over.** The generator view — low-confidence evidence removed, unbacked numbers redacted — is applied to matching too, so a match reason can never cite a metric the resume itself would refuse to print.
+
+**Match reasons are card-level.** `{card_id, theme, reasoning}` is what makes cards light up on the Profile timeline with an explanation attached, instead of a number with nothing behind it.
+
+**A JD is analyzed once, ever.** The analysis and eligibility criteria live on the shared posting row, so the tenth student to look at a Databricks posting pays nothing for the reading of it.
+
+**The queue is derived state.** "Do next" is computed on every read from posting status, applied dates, and contact touches — never stored. Changing a threshold in `lib/hq/config.ts` changes every queue instantly, and a task disappears the moment its cause does.
+
+### On LinkedIn
+
+There is no LinkedIn API here, and scraping it would violate their terms. What the research agent produces instead is the thinking: the archetypes worth filtering for, the exact filter combination, a `linkedin.com/search` URL that runs it, one concrete ask per person, and a first message. You run the search. Named people appear only when public sources — team pages, engineering blogs, conference talks, published university-recruiting contacts — actually support them, and the brief says plainly when your school has no connection to a company rather than inventing one.
+
+## The resume pipeline
+
+The generator is unchanged in philosophy: the job description is the gravitational center, and the resume is rewritten around it rather than scored against it. Five stages — **analyze** (concept-level themes, not keywords) → **research** (three parallel web-search agents: company intel with a voice scan, role/market, resume conventions for this industry) → **reframe** (belief vector, ranked demand vector, per-entry directives with verb registers and anchor metrics) → **synthesize** → **verify** (deterministic rule checks with one auto-revision pass).
+
+Two things changed: the bank now comes from your experience cards instead of a JSON file, and when you generate against a tracked posting the analyze stage reuses the cached analysis. Research still runs fresh every time — it's time-sensitive by nature.
+
+### The evidence layer
 
 A model told to "formulate bullets" will invent confident numbers — it rounds 23% into "over 20%" and reaches for impressive low-confidence figures because they read well. So facts and phrasing are split architecturally, not by prompt:
 
-- **Evidence records.** Each work/project entry carries evidence records: the verbatim metric token, the claim it substantiates, its provenance, and a confidence tag (`high` / `medium` / `low`). The editor has a "Scan bullets for metrics" button to bootstrap these from existing prose.
-- **The generator view.** Before any prompt, the bank is filtered: `low`-confidence evidence is removed entirely (invisible to the generator), and numeric tokens in prose that aren't backed by visible evidence are redacted. The generator chooses *which* evidence to feature and writes the surrounding context — it never decides what a number is.
-- **The verbatim check.** The verifier extracts every numeric token from the output and requires each to appear verbatim in what the generator was shown (bare years and dates exempt). Rounding drift fails by construction; violations trigger the automatic revision pass, which receives the list of permitted metrics.
-- **The metric audit.** The results page traces every number on the final resume back to its evidence record and provenance.
+- **Evidence records.** Each entry carries the verbatim metric token, the claim it substantiates, its provenance, and a confidence tag (`high` / `medium` / `low`). Resume import creates these automatically; you confirm them.
+- **The generator view.** Before any prompt, the bank is filtered: `low`-confidence evidence is removed entirely, and numeric tokens in prose that aren't backed by visible evidence are redacted.
+- **The verbatim check.** The verifier extracts every numeric token from the output and requires each to appear verbatim in what the generator was shown. Rounding drift fails by construction.
+- **The metric audit.** Every number on the final resume traces back to its evidence record and provenance.
 
 Requirements the bank can't support are reported honestly as gaps — never invented.
-
-Built with Next.js + TypeScript and the [Anthropic API](https://platform.claude.com/) (Claude Opus 4.8, web search server tool, structured outputs, adaptive thinking).
 
 ## Setup
 
@@ -38,40 +54,55 @@ cp .env.example .env.local   # add your ANTHROPIC_API_KEY
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000. The board is seeded with a Summer 2027 PM-intern season on first run, so there is something real to look at before you've added anything.
 
-## Usage
-
-1. Go to **Experience Bank** and replace the sample data with your own history. Be generous — include metrics, tools, and outcomes; every number in a tailored bullet must trace back here. Saved to `data/experience-bank.json` (git-ignored; it's personal data).
-2. Go to **Generate**, paste a full job description, optionally add guidance ("lead with the data projects", "skip the retail job"), and generate. You'll watch live progress through all five stages.
-3. Review the result: the rendered resume, the verification report, the tailoring strategy, the reframing map (beliefs, demands, entry directives, bullet-by-bullet theme map), ATS keywords used, honest gaps, and the raw research.
-4. Export as **.docx** (ATS-clean: Times New Roman, 0.5" margins, bordered ALL-CAPS section headers, right-aligned dates), **PDF** (via print stylesheet), or **Markdown**.
+Matching, research, resume import, and generation all need the API key. Everything else — the tracker, the queue, contacts, notes — works without one.
 
 ## Architecture
 
 ```
 app/
-  page.tsx                    # Generate flow (SSE progress UI, tailoring table, exports)
-  experience/page.tsx         # Experience bank editor
-  api/generate/route.ts       # SSE pipeline: analyze → research ×3 → reframe → synthesize → verify
-  api/experience/route.ts     # Experience bank load/save
-  api/export/docx/route.ts    # ATS-clean .docx export
-lib/
-  types.ts                    # Zod schemas: analysis (themes), reframe map, bank + evidence, resume, verification
-  evidence.ts                 # Metric-token semantics, generator view (redaction + confidence filter), metric audit
-  anthropic.ts                # Anthropic client (Claude Opus 4.8)
-  pipeline/analyze.ts         # Two-read JD analysis with theme extraction
-  pipeline/research.ts        # 3 parallel web_search agents incl. company voice scan
-  pipeline/reframe.ts         # Belief vector + demand vector + per-entry directives
-  pipeline/synthesize.ts      # Embodiment writing rules + hard constraints
-  pipeline/verify.ts          # Deterministic rule checks + one auto-revision pass
-  docx.ts                     # Yale-style .docx template (docx package)
-  experienceStore.ts          # JSON file store for the experience bank
-components/ResumeView.tsx     # Resume renderer + markdown export
-data/experience-bank.sample.json  # Seed data used until you save your own
+  page.tsx                       # Tracker (Today / Timeline / Companies / People)
+  profile/page.tsx               # Living portfolio: cards, resume import, paste-a-JD match
+  generate/page.tsx              # Resume generation flow (SSE progress, exports)
+  experience/page.tsx            # Evidence editor (provenance + confidence)
+  api/profile/…                  # Profile CRUD + resume import
+  api/cards/…                    # Experience card CRUD
+  api/postings/…                 # Shared posting database; POST enriches a contributed JD
+  api/applications/…             # The board + derived queue; stage changes write stage_events
+  api/contacts/… api/notes/…     # Referral CRM
+  api/match/[postingId]          # Cheap scored match (eligibility-gated, cached)
+  api/match/all                  # Batch scoring with SSE progress
+  api/research/[companyId]       # Company brief + networking plan
+  api/generate                   # Full 5-stage pipeline, posting-aware
+lib/hq/
+  config.ts                      # Every threshold, stage, lane, and label
+  types.ts                       # Zod schemas mirroring the SQL schema
+  eligibility.ts                 # The deterministic gate
+  queue.ts                       # Derived "do next" queue + board summary
+  matching.ts                    # Cache → analyze-once → gate → score
+  bank.ts                        # Cards ↔ ExperienceBank bridge, evidence-filtered
+  repo.ts                        # Every read and write; cache invalidation lives here
+  db/                            # HqStore interface + JSON-file adapter + seed
+lib/pipeline/
+  analyze · research · reframe · synthesize · verify     # the resume pipeline
+  eligibility.ts                 # JD → hard screening criteria (once per posting)
+  match.ts                       # The cheap-path scorer
+  parseResume.ts                 # PDF/DOCX/text → cards + evidence
+  companyBrief.ts                # Web research → brief + networking plan
+supabase/migrations/0001_init.sql  # The Postgres shape, for when this goes multi-user
 ```
 
-Notes:
+### Storage
 
-- Generation takes a few minutes — the research agents each run several web searches. Progress streams to the UI over server-sent events.
-- The experience bank is stored locally as JSON; this app is designed for single-user, local use.
+The app is local-first: the whole database is one JSON document at `data/hq.json` (git-ignored — it's personal). `HqStore` in `lib/hq/db/types.ts` is the seam — two methods, `read` and `write`. Moving to Postgres means implementing that interface against `supabase/migrations/0001_init.sql` and branching in `lib/hq/db/index.ts`; nothing else changes, because every row already carries a `user_id` and every query already filters on it. `currentUserId()` in `lib/hq/auth.ts` returns a constant today and becomes a session lookup then.
+
+### Nothing here is locked
+
+Thresholds, tiers, stages, lanes, and season strings live in `lib/hq/config.ts`, not inlined. Each agent's prompt, output schema, and model choice live together in one file under `lib/pipeline/`, so swapping a model or rewriting a prompt never touches a route. Route handlers parse, call one repo function, and return JSON. Derived state — the queue, match staleness, eligibility — is computed, never stored as an editable copy, so changing a rule updates everything at once.
+
+## Not built yet
+
+- **The daily scan.** Detecting when a watched posting actually opens is a scheduled job (pg_cron → edge function), and it needs the Postgres backend first. Today, window months are last-cycle patterns, and the UI says so rather than implying they're verified.
+- **Multi-user auth.** The schema, RLS policies, and per-row `user_id` filtering are all in place; the session lookup is not.
+- **Live posting verification.** `postings.verified` and `last_verified_at` exist and are always false — nothing re-checks a live page yet.

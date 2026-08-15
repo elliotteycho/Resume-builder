@@ -3,8 +3,9 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Resume Builder",
-  description: "Job-description-driven, research-backed resume builder",
+  title: "Internship HQ",
+  description:
+    "A recruiting CRM for students: track the season, match your experience to postings, and find the warm connection.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -13,14 +14,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <nav className="topnav no-print">
           <Link href="/" className="brand">
-            Resume<span>Builder</span>
+            Internship<span>HQ</span>
           </Link>
           <div className="navlinks">
-            <Link href="/">Generate</Link>
-            <Link href="/experience">Experience Bank</Link>
+            <Link href="/">Tracker</Link>
+            <Link href="/profile">Profile</Link>
+            <Link href="/generate">Generate resume</Link>
+            <Link href="/experience">Evidence</Link>
           </div>
         </nav>
-        <main>{children}</main>
+        {children}
       </body>
     </html>
   );

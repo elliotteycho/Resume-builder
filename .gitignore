@@ -13,8 +13,10 @@ build/
 .env.local
 .env*.local
 
-# user data (experience bank is personal)
+# user data (the experience bank and the HQ database are personal)
 data/experience-bank.json
+data/hq.json
+data/hq.json.*.tmp
 
 # misc
 .DS_Store
