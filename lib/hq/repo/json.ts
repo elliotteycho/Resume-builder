@@ -18,20 +18,22 @@ import type {
   ResumeVersion,
   StageEvent,
   StoredEvidence,
+  UsageEntry,
 } from "@/lib/hq/types";
-import { HQ_CONFIG, type Stage } from "@/lib/hq/config";
+import { HQ_CONFIG } from "@/lib/hq/config";
+import type { HqRepo } from "@/lib/hq/repo/types";
 
 /**
- * Every read and write the routes perform. Route handlers stay thin: parse,
- * call one of these, return JSON. Business rules that outlive a single request
- * (stage events, cache invalidation, dedupe) live here, not in the routes.
+ * The local-mode implementation of `HqRepo`, over the JSON-file store.
+ * Business rules that outlive a single request (stage events, cache
+ * invalidation, dedupe) live here, not in the routes.
  */
 
 const now = () => new Date().toISOString();
 
 // ---------- profile ----------
 
-export async function getProfile(userId: string): Promise<Profile> {
+async function getProfile(userId: string): Promise<Profile> {
   const data = await getStore().read();
   const found = data.profiles.find((p) => p.user_id === userId);
   if (found) return found;
@@ -68,7 +70,7 @@ export async function getProfile(userId: string): Promise<Profile> {
   return result;
 }
 
-export async function updateProfile(
+async function updateProfile(
   userId: string,
   patch: Partial<Profile>
 ): Promise<Profile> {
@@ -89,7 +91,7 @@ export async function updateProfile(
 
 // ---------- experience cards ----------
 
-export async function listCards(
+async function listCards(
   userId: string
 ): Promise<ExperienceCardWithEvidence[]> {
   const data = await getStore().read();
@@ -102,7 +104,7 @@ export async function listCards(
     }));
 }
 
-export async function saveCard(
+async function saveCard(
   userId: string,
   input: Partial<ExperienceCard> & { evidence?: Omit<StoredEvidence, "id" | "card_id">[] }
 ): Promise<ExperienceCardWithEvidence> {
@@ -152,7 +154,7 @@ export async function saveCard(
   return result;
 }
 
-export async function deleteCard(userId: string, cardId: string): Promise<boolean> {
+async function deleteCard(userId: string, cardId: string): Promise<boolean> {
   const { result } = await getStore().write((d) => {
     const before = d.experience_cards.length;
     d.experience_cards = d.experience_cards.filter(
@@ -166,7 +168,7 @@ export async function deleteCard(userId: string, cardId: string): Promise<boolea
 }
 
 /** Bulk import — used by the resume parser, which produces a whole bank at once. */
-export async function replaceCards(
+async function replaceCards(
   userId: string,
   cards: (Partial<ExperienceCard> & {
     evidence?: Omit<StoredEvidence, "id" | "card_id">[];
@@ -215,7 +217,7 @@ export async function replaceCards(
 
 // ---------- postings ----------
 
-export async function listPostingViews(
+async function listPostingViews(
   userId: string,
   opts: { season?: string; status?: string; q?: string } = {}
 ): Promise<PostingView[]> {
@@ -233,7 +235,7 @@ export async function listPostingViews(
     });
 }
 
-export async function getPostingView(
+async function getPostingView(
   userId: string,
   postingId: string
 ): Promise<PostingView | null> {
@@ -276,7 +278,7 @@ function toView(
  * Dedupe key is (company slug, program, season) per the handoff — the same
  * program contributed twice must not fork the shared row.
  */
-export async function upsertPosting(input: {
+async function upsertPosting(input: {
   companyName: string;
   careersUrl?: string;
   program: string;
@@ -361,7 +363,7 @@ export async function upsertPosting(input: {
   return result;
 }
 
-export async function saveJdAnalysis(
+async function saveJdAnalysis(
   postingId: string,
   analysis: Posting["jd_analysis"],
   eligibility: Posting["eligibility"]
@@ -377,7 +379,7 @@ export async function saveJdAnalysis(
   });
 }
 
-export async function setPostingStatus(
+async function setPostingStatus(
   postingId: string,
   status: Posting["status"]
 ): Promise<void> {
@@ -393,12 +395,12 @@ export async function setPostingStatus(
 
 // ---------- applications ----------
 
-export async function listApplications(userId: string): Promise<Application[]> {
+async function listApplications(userId: string): Promise<Application[]> {
   const data = await getStore().read();
   return data.applications.filter((a) => a.user_id === userId);
 }
 
-export async function ensureApplication(
+async function ensureApplication(
   userId: string,
   postingId: string,
   tier?: number
@@ -428,7 +430,7 @@ export async function ensureApplication(
   return result;
 }
 
-export async function patchApplication(
+async function patchApplication(
   userId: string,
   applicationId: string,
   patch: Partial<Pick<Application, "stage" | "tier" | "applied_date" | "next_action" | "resume_version_id">>
@@ -465,7 +467,7 @@ export async function patchApplication(
 }
 
 /** Stage events, notes, and contact touches merged into one chronology. */
-export async function getTimeline(userId: string, applicationId: string) {
+async function getTimeline(userId: string, applicationId: string) {
   const data = await getStore().read();
   const app = data.applications.find(
     (a) => a.id === applicationId && a.user_id === userId
@@ -507,14 +509,14 @@ export async function getTimeline(userId: string, applicationId: string) {
 
 // ---------- contacts ----------
 
-export async function listContacts(userId: string): Promise<Contact[]> {
+async function listContacts(userId: string): Promise<Contact[]> {
   const data = await getStore().read();
   return data.contacts
     .filter((c) => c.user_id === userId)
     .sort((a, b) => a.company_name.localeCompare(b.company_name) || a.name.localeCompare(b.name));
 }
 
-export async function createContact(
+async function createContact(
   userId: string,
   input: Partial<Contact>
 ): Promise<Contact> {
@@ -549,7 +551,7 @@ export async function createContact(
   return result;
 }
 
-export async function patchContact(
+async function patchContact(
   userId: string,
   contactId: string,
   patch: Partial<Contact>
@@ -569,7 +571,7 @@ export async function patchContact(
   return result;
 }
 
-export async function deleteContact(userId: string, contactId: string): Promise<boolean> {
+async function deleteContact(userId: string, contactId: string): Promise<boolean> {
   const { result } = await getStore().write((d) => {
     const before = d.contacts.length;
     d.contacts = d.contacts.filter((c) => !(c.id === contactId && c.user_id === userId));
@@ -580,7 +582,7 @@ export async function deleteContact(userId: string, contactId: string): Promise<
 
 // ---------- notes ----------
 
-export async function saveCompanyNote(
+async function saveCompanyNote(
   userId: string,
   companyId: string,
   body: string
@@ -612,7 +614,7 @@ export async function saveCompanyNote(
 
 // ---------- matches ----------
 
-export async function getMatch(
+async function getMatch(
   userId: string,
   postingId: string
 ): Promise<Match | null> {
@@ -623,7 +625,7 @@ export async function getMatch(
   );
 }
 
-export async function saveMatch(match: Omit<Match, "id">): Promise<Match> {
+async function saveMatch(match: Omit<Match, "id">): Promise<Match> {
   const { result } = await getStore().write((d) => {
     const existing = d.matches.find(
       (m) => m.user_id === match.user_id && m.posting_id === match.posting_id
@@ -647,7 +649,7 @@ function markStale(data: HqData, pred: (m: Match) => boolean) {
 
 // ---------- research ----------
 
-export async function getResearchBrief(
+async function getResearchBrief(
   userId: string,
   companyId: string
 ): Promise<ResearchBrief | null> {
@@ -659,7 +661,7 @@ export async function getResearchBrief(
   );
 }
 
-export async function saveResearchBrief(
+async function saveResearchBrief(
   brief: Omit<ResearchBrief, "id">
 ): Promise<ResearchBrief> {
   const { result } = await getStore().write((d) => {
@@ -675,7 +677,7 @@ export async function saveResearchBrief(
 
 // ---------- resume versions ----------
 
-export async function saveResumeVersion(
+async function saveResumeVersion(
   version: Omit<ResumeVersion, "id">
 ): Promise<ResumeVersion> {
   const { result } = await getStore().write((d) => {
@@ -686,20 +688,16 @@ export async function saveResumeVersion(
   return result;
 }
 
-export async function listResumeVersions(userId: string): Promise<ResumeVersion[]> {
+async function listResumeVersions(userId: string): Promise<ResumeVersion[]> {
   const data = await getStore().read();
   return data.resume_versions
     .filter((r) => r.user_id === userId)
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
-export async function getCompany(companyId: string): Promise<Company | null> {
+async function getCompany(companyId: string): Promise<Company | null> {
   const data = await getStore().read();
   return data.companies.find((c) => c.id === companyId) ?? null;
-}
-
-export function stageLabelOf(stage: Stage): Stage {
-  return stage;
 }
 
 function slugify(name: string): string {
@@ -708,3 +706,48 @@ function slugify(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
+
+// ---------- usage ledger ----------
+
+async function recordUsage(entry: Omit<UsageEntry, "id" | "created_at">): Promise<void> {
+  await getStore().write((d) => {
+    d.usage_log.push({ ...entry, id: randomUUID(), created_at: now() });
+  });
+}
+
+async function monthlyUsage(month: string): Promise<UsageEntry[]> {
+  const data = await getStore().read();
+  return data.usage_log.filter((u) => u.created_at.startsWith(month));
+}
+
+export const jsonRepo: HqRepo = {
+  getProfile,
+  updateProfile,
+  listCards,
+  saveCard,
+  deleteCard,
+  replaceCards,
+  listPostingViews,
+  getPostingView,
+  upsertPosting,
+  saveJdAnalysis,
+  setPostingStatus,
+  getCompany,
+  listApplications,
+  ensureApplication,
+  patchApplication,
+  getTimeline,
+  listContacts,
+  createContact,
+  patchContact,
+  deleteContact,
+  saveCompanyNote,
+  getMatch,
+  saveMatch,
+  getResearchBrief,
+  saveResearchBrief,
+  saveResumeVersion,
+  listResumeVersions,
+  recordUsage,
+  monthlyUsage,
+};

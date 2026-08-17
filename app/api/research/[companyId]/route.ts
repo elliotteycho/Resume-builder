@@ -10,6 +10,7 @@ import {
   listPostingViews,
   saveResearchBrief,
 } from "@/lib/hq/repo";
+import { chargeUsage } from "@/lib/hq/usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 600;
@@ -36,6 +37,8 @@ export const POST = route(async (_req: NextRequest, { params }: Ctx) => {
 
   const [company, profile] = await Promise.all([getCompany(companyId), getProfile(userId)]);
   if (!company) throw notFound("Company");
+
+  await chargeUsage(userId, "brief");
 
   const views = await listPostingViews(userId);
   const program =

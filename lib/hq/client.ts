@@ -39,6 +39,16 @@ async function req<T>(url: string, init?: RequestInit): Promise<T> {
   const text = await res.text();
   const data = text ? JSON.parse(text) : {};
   if (!res.ok) {
+    // Auth failures are navigation, not errors to render: no session means go
+    // sign in; a session without membership means go redeem an invite.
+    const code = data?.error?.code;
+    if (typeof window !== "undefined") {
+      if (res.status === 401 || code === "auth_required") {
+        window.location.href = "/login";
+      } else if (code === "invite_required") {
+        window.location.href = "/welcome";
+      }
+    }
     throw new Error(data?.error?.message ?? `Request failed (${res.status})`);
   }
   return data as T;

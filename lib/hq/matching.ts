@@ -31,7 +31,16 @@ export async function ensureMatch(
   view: PostingView,
   profile: Profile,
   cards: ExperienceCardWithEvidence[],
-  opts: { force?: boolean } = {}
+  opts: {
+    force?: boolean;
+    /**
+     * Runs only when a scoring call is actually about to be made — after the
+     * cache and the eligibility gate have had their chance to short-circuit.
+     * This is where the quota charge lives, so a cached or gated match never
+     * costs a quota slot.
+     */
+    beforeModelCall?: () => Promise<void>;
+  } = {}
 ): Promise<Match> {
   if (!opts.force) {
     const cached = await getMatch(userId, view.id);
@@ -92,6 +101,8 @@ export async function ensureMatch(
       "Import your resume or add an experience card before matching."
     );
   }
+
+  if (opts.beforeModelCall) await opts.beforeModelCall();
 
   const summary = [
     profile.name,

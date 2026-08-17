@@ -23,6 +23,21 @@ export const HQ_CONFIG = {
   matchThresholds: { apply: 70, review: 45 },
   /** Default season new postings land in. */
   defaultSeason: "summer-2027",
+
+  /**
+   * Spend controls, enforced only in multi-user mode (a local install is the
+   * owner's own key). Quotas are per user per calendar month, counted in
+   * actions; costs are action-level estimates in cents, not token metering —
+   * good enough to bound the bill, cheap enough to check on every call.
+   */
+  quotas: {
+    import: { perMonth: 3, estCostCents: 15 },
+    match: { perMonth: 40, estCostCents: 8 },
+    brief: { perMonth: 6, estCostCents: 50 },
+    generate: { perMonth: 4, estCostCents: 250 },
+  },
+  /** Global monthly ceiling across all users, in cents. Env-overridable. */
+  spendCapCents: Number(process.env.HQ_SPEND_CAP_USD ?? 50) * 100,
 } as const;
 
 export const STAGES = [

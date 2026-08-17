@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { isMultiUser } from "@/lib/hq/mode";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/profile">Profile</Link>
             <Link href="/generate">Generate resume</Link>
             <Link href="/experience">Evidence</Link>
+            {isMultiUser() && <a href="/auth/signout">Sign out</a>}
           </div>
         </nav>
         {children}

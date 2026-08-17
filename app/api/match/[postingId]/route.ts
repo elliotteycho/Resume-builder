@@ -3,6 +3,7 @@ import { currentUserId } from "@/lib/hq/auth";
 import { json, notFound, route } from "@/lib/hq/http";
 import { ensureMatch } from "@/lib/hq/matching";
 import { getPostingView, getProfile, listCards } from "@/lib/hq/repo";
+import { chargeUsage } from "@/lib/hq/usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -21,5 +22,10 @@ export const POST = route(async (req: NextRequest, { params }: Ctx) => {
   ]);
   if (!view) throw notFound("Posting");
 
-  return json({ match: await ensureMatch(userId, view, profile, cards, { force }) });
+  return json({
+    match: await ensureMatch(userId, view, profile, cards, {
+      force,
+      beforeModelCall: () => chargeUsage(userId, "match"),
+    }),
+  });
 });

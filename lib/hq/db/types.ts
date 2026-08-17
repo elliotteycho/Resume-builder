@@ -11,6 +11,7 @@ import type {
   ResumeVersion,
   StageEvent,
   StoredEvidence,
+  UsageEntry,
 } from "@/lib/hq/types";
 
 /**
@@ -33,6 +34,7 @@ export type HqData = {
   matches: Match[];
   research_briefs: ResearchBrief[];
   resume_versions: ResumeVersion[];
+  usage_log: UsageEntry[];
 };
 
 export const EMPTY_DATA: HqData = {
@@ -48,6 +50,7 @@ export const EMPTY_DATA: HqData = {
   matches: [],
   research_briefs: [],
   resume_versions: [],
+  usage_log: [],
 };
 
 export interface HqStore {

@@ -58,6 +58,52 @@ Open http://localhost:3000. The board is seeded with a Summer 2027 PM-intern sea
 
 Matching, research, resume import, and generation all need the API key. Everything else — the tracker, the queue, contacts, notes — works without one.
 
+## Multi-user mode (the pilot)
+
+With no extra configuration the app is local-first: one user, no login, data in
+`data/hq.json`. Setting three env vars switches the same build to Supabase —
+real accounts, per-user data, invite gating, and spend controls:
+
+1. Create a Supabase project and run the three files in `supabase/migrations/`
+   in order (SQL editor or `supabase db push`). They create the schema with
+   RLS, the invite/usage tables, and the seeded season.
+2. Set the env vars from `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`
+   (server-only — never expose it to the client).
+3. Create an invite code:
+   ```sql
+   insert into invite_codes (code, max_uses, note)
+   values ('VANDY-PM-2027', 15, 'fall pilot');
+   ```
+4. Deploy (Vercel works; set the same env vars there). Sign-in is a magic
+   link; after first sign-in, new users enter an invite code once.
+
+How multi-user mode behaves differently:
+
+- **Membership is invite-only.** Anyone can authenticate, but the app serves
+  data only to users who redeemed a code — redemption is a single atomic
+  Postgres function (`redeem_invite`), so a code can't be raced past its
+  `max_uses`.
+- **Spend is bounded twice.** Each metered action (import / match / brief /
+  generate) has a per-user monthly quota, and `HQ_SPEND_CAP_USD` (default $50)
+  is a global monthly ceiling across all users. When either trips, AI features
+  pause with a clear message and the tracker keeps working. Charges are
+  action-level estimates recorded to `usage_log` *before* each call — matches
+  served from cache or blocked by the eligibility gate cost nothing.
+- **The shared layer is genuinely shared.** One user pasting a JD analyzes it
+  for everyone; one user flipping a posting to "open" puts it in everyone's
+  queue. At pilot scale, the cohort is the daily scan.
+
+The storage seam is `lib/hq/repo/` — the same `HqRepo` interface has a JSON
+implementation (local) and a Supabase implementation (multi-user), chosen per
+call by environment. `supabase/migrations/0003_seed.sql` is generated from
+`lib/hq/seed.ts` by `scripts/generate-seed-sql.mjs`; edit the TS and
+regenerate rather than editing the SQL.
+
+**Privacy note for pilot users:** resumes and experience data are sent to
+Anthropic's API to power parsing, matching, and generation. Don't import
+anything you wouldn't put in a job application.
+
 ## Architecture
 
 ```
@@ -103,6 +149,7 @@ Thresholds, tiers, stages, lanes, and season strings live in `lib/hq/config.ts`,
 
 ## Not built yet
 
-- **The daily scan.** Detecting when a watched posting actually opens is a scheduled job (pg_cron → edge function), and it needs the Postgres backend first. Today, window months are last-cycle patterns, and the UI says so rather than implying they're verified.
-- **Multi-user auth.** The schema, RLS policies, and per-row `user_id` filtering are all in place; the session lookup is not.
+- **The daily scan.** Detecting when a watched posting actually opens is a scheduled job (pg_cron → edge function). At pilot scale the cohort substitutes: any user flipping a posting to "open" updates everyone. Window months are last-cycle patterns, and the UI says so rather than implying they're verified.
 - **Live posting verification.** `postings.verified` and `last_verified_at` exist and are always false — nothing re-checks a live page yet.
+- **Job-splitting for Vercel Hobby.** Four routes declare `maxDuration` of 300–600s. That fits Vercel Pro (800s with Fluid compute) but not Hobby (300s); running free on Hobby means splitting `/api/generate` and `/api/match/all` into staged jobs with polling, per the pattern in the original handoff's AGENTS.md.
+- **Token-level usage metering.** The ledger records action-level estimates; real per-call `usage` capture would sharpen the cost data.

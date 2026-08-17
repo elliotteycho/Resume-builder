@@ -10,8 +10,9 @@ import type { Company, Posting } from "@/lib/hq/types";
  *
  * The shared layer (companies + postings) is populated so a brand-new user
  * opens the app to a real season on the radar instead of an empty board. The
- * personal layer starts empty apart from a blank profile row — applications
- * are created when the user actually engages with a posting.
+ * personal layer starts empty apart from a blank profile row for the local
+ * user — applications are created when a user actually engages with a posting,
+ * never by the seed.
  */
 export function seedData(): HqData {
   const now = new Date().toISOString();
@@ -59,35 +60,6 @@ export function seedData(): HqData {
       updated_at: now,
     };
     data.postings.push(posting);
-
-    // A seeded posting can carry a known prior application (the user's real
-    // history, imported with the season). Everything else starts untouched.
-    if (seed.stage === "applied") {
-      const application = {
-        id: randomUUID(),
-        user_id: DEFAULT_USER_ID,
-        posting_id: posting.id,
-        stage: "applied" as const,
-        tier: seed.tier,
-        applied_date: seed.applied_date ?? null,
-        next_action: seed.next_action ?? "",
-        resume_version_id: null,
-        created_at: now,
-        updated_at: now,
-      };
-      data.applications.push(application);
-      data.stage_events.push({
-        id: randomUUID(),
-        application_id: application.id,
-        user_id: DEFAULT_USER_ID,
-        from_stage: null,
-        to_stage: "applied",
-        note: "Imported with the season",
-        at: seed.applied_date
-          ? new Date(`${seed.applied_date}T12:00:00Z`).toISOString()
-          : now,
-      });
-    }
   }
 
   data.profiles.push({

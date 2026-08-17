@@ -16,6 +16,8 @@ import {
   saveResumeVersion,
 } from "@/lib/hq/repo";
 import { extractEligibility } from "@/lib/pipeline/eligibility";
+import { HttpError } from "@/lib/hq/http";
+import { chargeUsage } from "@/lib/hq/usage";
 import type { ExperienceBank, JobAnalysis, ProgressEvent } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -35,7 +37,22 @@ async function loadBankFor(userId: string): Promise<ExperienceBank> {
 }
 
 export async function POST(req: NextRequest) {
-  const userId = await currentUserId();
+  let userId: string;
+  try {
+    userId = await currentUserId();
+    // The full pipeline is the most expensive call in the app; the quota is
+    // checked before the stream opens so a refusal is a clean 429, not a
+    // half-open stream.
+    await chargeUsage(userId, "generate");
+  } catch (err) {
+    if (err instanceof HttpError) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: err.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    throw err;
+  }
   const { jobDescription, postingId, guidance } = await req.json();
 
   // A posting id supplies the JD (and its cached analysis) from the shared

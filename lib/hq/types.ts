@@ -337,6 +337,22 @@ export const ResumeVersionSchema = z.object({
 });
 export type ResumeVersion = z.infer<typeof ResumeVersionSchema>;
 
+// ---------- usage ledger ----------
+
+/** The metered actions — the ones that bill the API key. */
+export const USAGE_KINDS = ["import", "match", "brief", "generate"] as const;
+export type UsageKind = (typeof USAGE_KINDS)[number];
+
+export const UsageEntrySchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  kind: z.enum(USAGE_KINDS),
+  /** Estimated cost in cents — action-level estimates, not token-metered. */
+  est_cost_cents: z.number().int(),
+  created_at: z.string(),
+});
+export type UsageEntry = z.infer<typeof UsageEntrySchema>;
+
 // ---------- derived (never stored) ----------
 
 export type QueueItem = {

@@ -3,6 +3,7 @@ import { currentUserId } from "@/lib/hq/auth";
 import { HttpError, json, route } from "@/lib/hq/http";
 import { parseResume, resumeToText } from "@/lib/pipeline/parseResume";
 import { getProfile, listCards, replaceCards, updateProfile } from "@/lib/hq/repo";
+import { chargeUsage } from "@/lib/hq/usage";
 
 export const runtime = "nodejs";
 // Reading a resume and deriving capabilities and evidence for every entry.
@@ -47,6 +48,8 @@ export const POST = route(async (req: NextRequest) => {
     input = { text: body.text };
     fileName = "pasted-resume.txt";
   }
+
+  await chargeUsage(userId, "import");
 
   const [parsed, text] = await Promise.all([parseResume(input), resumeToText(input)]);
 

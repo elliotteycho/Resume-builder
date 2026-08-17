@@ -1,6 +1,7 @@
 import { currentUserId } from "@/lib/hq/auth";
 import { ensureMatch } from "@/lib/hq/matching";
 import { getProfile, listCards, listPostingViews } from "@/lib/hq/repo";
+import { chargeUsage } from "@/lib/hq/usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 600;
@@ -58,7 +59,11 @@ export async function POST() {
         let done = 0;
         for (const view of scorable) {
           try {
-            const match = await ensureMatch(userId, view, profile, cards);
+            // Cached and gated postings cost nothing; a quota trip surfaces as
+            // a per-posting skip so the batch reports how far it got.
+            const match = await ensureMatch(userId, view, profile, cards, {
+              beforeModelCall: () => chargeUsage(userId, "match"),
+            });
             done++;
             send({
               type: "progress",
