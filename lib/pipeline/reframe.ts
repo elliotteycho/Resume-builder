@@ -55,6 +55,10 @@ ${research.market}
 ${research.conventions}
 </resume_conventions_research>
 
+<keynote_and_annual_report_research>
+${research.keynotes}
+</keynote_and_annual_report_research>
+
 <experience_bank>
 ${JSON.stringify(bank, null, 2)}
 </experience_bank>

@@ -70,6 +70,10 @@ ${research.market}
 ${research.conventions}
 </resume_conventions_research>
 
+<keynote_and_annual_report_research>
+${research.keynotes}
+</keynote_and_annual_report_research>
+
 <reframing_map>
 ${JSON.stringify(reframe, null, 2)}
 </reframing_map>

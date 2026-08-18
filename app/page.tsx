@@ -12,13 +12,14 @@ import type {
   VerificationReport,
 } from "@/lib/types";
 
-type AgentName = "company" | "market" | "conventions";
+type AgentName = "company" | "market" | "conventions" | "keynotes";
 type AgentStates = Record<AgentName, "idle" | "running" | "done">;
 
 const AGENT_LABELS: Record<AgentName, string> = {
   company: "Company intel agent — news, products, culture, voice",
   market: "Role & market agent — current demand and trends",
   conventions: "Conventions agent — how resumes work in this industry",
+  keynotes: "Keynote agent — strategy from keynotes and annual reports",
 };
 
 const STAGES = ["analyzing", "researching", "reframing", "synthesizing", "verifying", "done"] as const;
@@ -36,7 +37,7 @@ export default function GeneratePage() {
   const [guidance, setGuidance] = useState("");
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState<string | null>(null);
-  const [agents, setAgents] = useState<AgentStates>({ company: "idle", market: "idle", conventions: "idle" });
+  const [agents, setAgents] = useState<AgentStates>({ company: "idle", market: "idle", conventions: "idle", keynotes: "idle" });
   const [analysis, setAnalysis] = useState<JobAnalysis | null>(null);
   const [reframe, setReframe] = useState<Reframe | null>(null);
   const [resume, setResume] = useState<Resume | null>(null);
@@ -57,7 +58,7 @@ export default function GeneratePage() {
     setVerification(null);
     setMetricAudit([]);
     setStage("analyzing");
-    setAgents({ company: "idle", market: "idle", conventions: "idle" });
+    setAgents({ company: "idle", market: "idle", conventions: "idle", keynotes: "idle" });
 
     try {
       const res = await fetch("/api/generate", {
@@ -375,6 +376,10 @@ export default function GeneratePage() {
               <details className="research">
                 <summary>Industry resume conventions</summary>
                 <div className="research-md">{research.conventions}</div>
+              </details>
+              <details>
+                <summary>Keynotes &amp; annual reports (strategy in their words)</summary>
+                <div className="research-md">{research.keynotes}</div>
               </details>
             </div>
           )}

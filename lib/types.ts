@@ -53,6 +53,7 @@ export type ResearchFindings = {
   company: string;   // markdown findings about the company (including voice notes)
   market: string;    // markdown findings about the role/market
   conventions: string; // markdown findings about resume conventions for this role/industry
+  keynotes: string;  // markdown digest of keynote recaps / annual reports / shareholder letters: strategy in the company's own words
 };
 
 // ---------- Reframe synthesis (fuses JD parsing + company research) ----------
@@ -230,7 +231,7 @@ export type VerificationReport = {
 
 export type ProgressEvent =
   | { type: "stage"; stage: string; detail?: string }
-  | { type: "agent"; agent: "company" | "market" | "conventions"; status: "running" | "done"; detail?: string }
+  | { type: "agent"; agent: "company" | "market" | "conventions" | "keynotes"; status: "running" | "done"; detail?: string }
   | { type: "analysis"; analysis: JobAnalysis }
   | { type: "reframe"; reframe: Reframe }
   | {
