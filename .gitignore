@@ -20,3 +20,7 @@ data/experience-bank.json
 .DS_Store
 *.tsbuildinfo
 npm-debug.log*
+
+# user data: tailored resume JSONs and rendered docx output (repo is public)
+data/resumes/
+resumes/
